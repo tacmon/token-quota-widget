@@ -4,7 +4,7 @@ English | [简体中文](README.md)
 
 ![Token Quota Widget](docs/widget.png)
 
-A minimal transparent Linux desktop widget for the Quota Share API. It stays on top, can be dragged anywhere, and displays:
+A minimal transparent Linux and Windows desktop widget for the Quota Share API. It stays on top, can be dragged anywhere, and displays:
 
 - Used, remaining, and reset time for the 7-day quota
 - Total token usage over the last 72 hours
@@ -15,7 +15,7 @@ The application uses only the Python standard library and Tk. It has no third-pa
 
 ## Run
 
-Requires Python 3.11+ and Tk 8.6:
+Requires Python 3.11+ and Tk 8.6. On Linux:
 
 ```bash
 python3 -m token_quota_widget
@@ -27,7 +27,14 @@ Preview the UI with demo data and no network access:
 python3 -m token_quota_widget --demo
 ```
 
-## Desktop installation
+On Windows, use `python`:
+
+```powershell
+python -m token_quota_widget
+python -m token_quota_widget --demo
+```
+
+## Linux desktop installation
 
 ```bash
 git clone https://github.com/tacmon/token-quota-widget.git
@@ -47,6 +54,35 @@ Uninstall the application files:
 ```bash
 ./uninstall.sh
 ```
+
+## Windows desktop installation
+
+Install for the current user and create a Start Menu shortcut without administrator privileges:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+Enable launch after login:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Autostart
+```
+
+Use `-Python C:\Path\To\python.exe` to select an interpreter. `ExecutionPolicy Bypass` applies only to this PowerShell process and does not change persistent user or machine policy.
+
+- Application: `%LOCALAPPDATA%\Programs\TokenQuotaWidget`
+- Settings: `%LOCALAPPDATA%\TokenQuotaWidget\config.json`
+- The shortcut uses `pythonw.exe`, so no console window remains open
+- Bundled Noto Sans CJK SC and DejaVu Sans Mono fonts are private to the Windows process
+
+Remove the application and shortcuts while retaining settings:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
+
+See `token_quota_widget/fonts/NOTICE.md` for bundled font versions, sources, SHA-256 values, and licenses.
 
 ## API key
 

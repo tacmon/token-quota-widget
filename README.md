@@ -4,7 +4,7 @@
 
 ![Token Quota Widget](docs/widget.png)
 
-一个面向 Quota Share API 的极简 Linux 桌面悬浮组件。窗口无标题栏、始终置顶、支持拖动和透明度调节，显示：
+一个面向 Quota Share API 的极简 Linux 与 Windows 桌面悬浮组件。窗口无标题栏、始终置顶、支持拖动和透明度调节，显示：
 
 - 7 天额度的已用、剩余和重置时间
 - 近 72 小时的总 Token 消耗
@@ -15,7 +15,7 @@
 
 ## 运行
 
-要求 Python 3.11+ 和 Tk 8.6。在项目目录执行：
+要求 Python 3.11+ 和 Tk 8.6。在 Linux 项目目录执行：
 
 ```bash
 python3 -m token_quota_widget
@@ -27,7 +27,14 @@ python3 -m token_quota_widget
 python3 -m token_quota_widget --demo
 ```
 
-## 安装到桌面
+Windows 使用 `python` 命令：
+
+```powershell
+python -m token_quota_widget
+python -m token_quota_widget --demo
+```
+
+## Linux 桌面安装
 
 ```bash
 git clone https://github.com/tacmon/token-quota-widget.git
@@ -48,6 +55,35 @@ chmod +x install.sh uninstall.sh
 ./uninstall.sh
 ```
 
+## Windows 桌面安装
+
+安装到当前用户目录并创建开始菜单快捷方式，不需要管理员权限：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+登录后自动启动：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Autostart
+```
+
+需要指定 Python 时使用 `-Python C:\Path\To\python.exe`。这里的 `ExecutionPolicy Bypass` 只作用于本次 PowerShell 进程，不修改用户或系统策略。
+
+- 程序安装到 `%LOCALAPPDATA%\Programs\TokenQuotaWidget`
+- 设置保存到 `%LOCALAPPDATA%\TokenQuotaWidget\config.json`
+- 快捷方式使用 `pythonw.exe`，启动时不会保留控制台窗口
+- 内置 Noto Sans CJK SC 与 DejaVu Sans Mono，Windows 不会向系统安装字体
+
+卸载程序和快捷方式，但保留设置：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
+
+内置字体的版本、来源、SHA-256 与许可证见 `token_quota_widget/fonts/NOTICE.md`。
+
 ## API Key
 
 Key 按以下顺序获取：
@@ -58,7 +94,7 @@ Key 按以下顺序获取：
 
 自动读取 Codex Key 前，程序会检查当前 provider 的 `base_url` 与额度接口是否同域。这样不会把 OpenAI 或其他 provider 的 Key 发给错误的服务。手动填写的 Key 只保留在本次进程内；应用配置不会保存 Key。
 
-请求固定使用 `Authorization: Bearer ...` 头，Key 不会进入 URL。若 Codex 鉴权文件权限过宽，设置窗口会显示警告；可以修正为：
+请求固定使用 `Authorization: Bearer ...` 头，Key 不会进入 URL。在 Linux 上，若 Codex 鉴权文件权限过宽，设置窗口会显示警告；可以修正为：
 
 ```bash
 chmod 600 ~/.codex/auth.json
