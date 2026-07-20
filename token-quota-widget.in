@@ -1,0 +1,3 @@
+#!/bin/sh
+export PYTHONPATH="@APP_HOME@${PYTHONPATH:+:$PYTHONPATH}"
+exec "@PYTHON@" -m token_quota_widget "$@"

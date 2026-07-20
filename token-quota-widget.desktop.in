@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Token Quota
+Name[zh]=Token 额度
+Name[zh_CN]=Token 额度
+GenericName=API Quota Monitor
+Comment=Monitor Quota Share balance and 72-hour token usage
+Comment[zh]=查看 Quota Share 余额与近 72 小时 Token 消耗
+Comment[zh_CN]=查看 Quota Share 余额与近 72 小时 Token 消耗
+Exec="@BIN_PATH@"
+TryExec=@BIN_PATH@
+Icon=utilities-system-monitor
+Terminal=false
+Categories=Utility;Monitor;
+StartupNotify=false
