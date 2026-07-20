@@ -62,10 +62,19 @@ class AppSettings:
 class ConfigStore:
     def __init__(self, path: Path | None = None) -> None:
         if path is None:
-            config_home = Path(
-                os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
-            )
-            path = config_home / "token-quota-widget" / "config.json"
+            if os.name == "nt":
+                config_home = Path(
+                    os.environ.get(
+                        "LOCALAPPDATA",
+                        Path.home() / "AppData" / "Local",
+                    )
+                )
+                path = config_home / "TokenQuotaWidget" / "config.json"
+            else:
+                config_home = Path(
+                    os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+                )
+                path = config_home / "token-quota-widget" / "config.json"
         self.path = path
 
     def load(self) -> AppSettings:
@@ -79,10 +88,11 @@ class ConfigStore:
 
     def save(self, settings: AppSettings) -> None:
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        try:
-            self.path.parent.chmod(0o700)
-        except OSError:
-            pass
+        if os.name != "nt":
+            try:
+                self.path.parent.chmod(0o700)
+            except OSError:
+                pass
 
         fd, temp_name = tempfile.mkstemp(
             prefix="config-",
@@ -90,12 +100,14 @@ class ConfigStore:
             dir=self.path.parent,
         )
         try:
-            os.fchmod(fd, 0o600)
+            if os.name != "nt":
+                os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 json.dump(settings.to_mapping(), handle, ensure_ascii=False, indent=2)
                 handle.write("\n")
             os.replace(temp_name, self.path)
-            self.path.chmod(0o600)
+            if os.name != "nt":
+                self.path.chmod(0o600)
         except BaseException:
             try:
                 os.close(fd)
@@ -170,11 +182,12 @@ class KeyResolver:
 
         warning = None
         permission_mode = None
-        try:
-            mode = stat.S_IMODE(auth_path.stat().st_mode)
-            if mode & 0o077:
-                warning = f"权限 {mode:o}，建议 600"
-                permission_mode = mode
-        except OSError:
-            pass
+        if os.name != "nt":
+            try:
+                mode = stat.S_IMODE(auth_path.stat().st_mode)
+                if mode & 0o077:
+                    warning = f"权限 {mode:o}，建议 600"
+                    permission_mode = mode
+            except OSError:
+                pass
         return KeyResolution(key.strip(), "Codex auth", warning, permission_mode)

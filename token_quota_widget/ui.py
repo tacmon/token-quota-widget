@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import fcntl
-import os
 import queue
 import sys
 import threading
 import time
 import tkinter as tk
 from datetime import datetime
-from pathlib import Path
 from tkinter import TclError
 from typing import Callable
 
@@ -22,7 +19,15 @@ from .formatting import (
     format_updated,
     format_window,
 )
+from .font_loader import (
+    MONO_FONT,
+    UI_FONT,
+    FontLoadError,
+    LoadedFonts,
+    load_bundled_fonts,
+)
 from .i18n import translate
+from .instance_lock import InstanceLock
 
 
 BG = "#17191c"
@@ -34,7 +39,7 @@ GREEN = "#48c78e"
 AMBER = "#e6b450"
 RED = "#ef6a6a"
 TRACK = "#343940"
-FONT = "Noto Sans CJK SC"
+FONT = UI_FONT
 
 ERROR_MESSAGE_KEYS = {
     "missing_key": "error_missing_key",
@@ -644,7 +649,7 @@ class TokenQuotaWidget:
             disabledbackground="#1d2024",
             disabledforeground=SUBTLE,
             relief="flat",
-            font=("DejaVu Sans Mono", 10),
+            font=(MONO_FONT, 10),
         )
         key_entry.place(x=46, y=98, width=410, height=30)
 
@@ -937,22 +942,6 @@ class TokenQuotaWidget:
         self.root.destroy()
 
 
-class InstanceLock:
-    def __init__(self) -> None:
-        runtime = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
-        self.path = runtime / f"token-quota-widget-{os.getuid()}.lock"
-        self.handle = self.path.open("a+", encoding="utf-8")
-        try:
-            fcntl.flock(self.handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            self.handle.close()
-            raise RuntimeError("Token 额度组件已经在运行") from None
-
-    def close(self) -> None:
-        fcntl.flock(self.handle, fcntl.LOCK_UN)
-        self.handle.close()
-
-
 def _demo_snapshot() -> QuotaSnapshot:
     return parse_snapshot(
         {
@@ -996,32 +985,39 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     lock: InstanceLock | None = None
+    loaded_fonts: LoadedFonts | None = None
     if not args.no_lock and not args.demo:
         try:
             lock = InstanceLock()
-        except RuntimeError as exc:
+        except (RuntimeError, OSError) as exc:
             print(exc, file=sys.stderr)
             return 2
 
     try:
-        root = tk.Tk()
-    except TclError as exc:
-        if lock:
-            lock.close()
-        print(f"无法连接桌面显示：{exc}", file=sys.stderr)
-        return 1
+        try:
+            loaded_fonts = load_bundled_fonts()
+        except FontLoadError as exc:
+            print(f"无法加载内置字体：{exc}", file=sys.stderr)
+            return 1
 
-    app = TokenQuotaWidget(
-        root,
-        demo=args.demo,
-        geometry=args.geometry,
-        persist_settings=not args.demo,
-    )
-    if args.quit_after and args.quit_after > 0:
-        root.after(round(args.quit_after * 1000), app.close)
-    try:
+        try:
+            root = tk.Tk()
+        except TclError as exc:
+            print(f"无法连接桌面显示：{exc}", file=sys.stderr)
+            return 1
+
+        app = TokenQuotaWidget(
+            root,
+            demo=args.demo,
+            geometry=args.geometry,
+            persist_settings=not args.demo,
+        )
+        if args.quit_after and args.quit_after > 0:
+            root.after(round(args.quit_after * 1000), app.close)
         root.mainloop()
+        return 0
     finally:
+        if loaded_fonts is not None:
+            loaded_fonts.close()
         if lock:
             lock.close()
-    return 0
