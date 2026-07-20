@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import stat
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from token_quota_widget.config import (
     AppSettings,
@@ -30,8 +32,20 @@ class ConfigStoreTests(unittest.TestCase):
             store.save(settings)
 
             self.assertEqual(store.load(), settings)
-            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            if os.name != "nt":
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
             self.assertNotIn("key", path.read_text(encoding="utf-8").lower())
+
+    @unittest.skipUnless(os.name == "nt", "Windows path behavior")
+    def test_default_path_uses_local_app_data(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"LOCALAPPDATA": directory}):
+                store = ConfigStore()
+
+        self.assertEqual(
+            store.path,
+            Path(directory) / "TokenQuotaWidget" / "config.json",
+        )
 
     def test_invalid_values_fall_back_or_clamp(self) -> None:
         settings = AppSettings.from_mapping(
@@ -75,8 +89,12 @@ class KeyResolverTests(unittest.TestCase):
 
             self.assertEqual(resolution.key, "codex-secret")
             self.assertEqual(resolution.source, "Codex auth")
-            self.assertIsNotNone(resolution.warning)
-            self.assertIsNotNone(resolution.permission_mode)
+            if os.name == "nt":
+                self.assertIsNone(resolution.warning)
+                self.assertIsNone(resolution.permission_mode)
+            else:
+                self.assertIsNotNone(resolution.warning)
+                self.assertIsNotNone(resolution.permission_mode)
 
     def test_refuses_to_send_unrelated_codex_key(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

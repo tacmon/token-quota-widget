@@ -21,3 +21,6 @@ token-quota-widget = "token_quota_widget.ui:main"
 
 [tool.setuptools.packages.find]
 include = ["token_quota_widget*"]
+
+[tool.setuptools.package-data]
+token_quota_widget = ["fonts/*"]
