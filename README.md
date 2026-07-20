@@ -30,6 +30,8 @@ python3 -m token_quota_widget --demo
 ## 安装到桌面
 
 ```bash
+git clone https://github.com/tacmon/token-quota-widget.git
+cd token-quota-widget
 chmod +x install.sh uninstall.sh
 ./install.sh
 ```

@@ -12,6 +12,10 @@ license = { text = "MIT" }
 authors = [{ name = "Token Quota Widget contributors" }]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/tacmon/token-quota-widget"
+Issues = "https://github.com/tacmon/token-quota-widget/issues"
+
 [project.scripts]
 token-quota-widget = "token_quota_widget.ui:main"
 
