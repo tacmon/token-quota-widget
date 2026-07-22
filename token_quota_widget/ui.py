@@ -40,6 +40,7 @@ AMBER = "#e6b450"
 RED = "#ef6a6a"
 TRACK = "#343940"
 FONT = UI_FONT
+IS_WINDOWS = sys.platform == "win32"
 
 ERROR_MESSAGE_KEYS = {
     "missing_key": "error_missing_key",
@@ -148,6 +149,7 @@ class TokenQuotaWidget:
         self.light_after_id: str | None = None
         self.full_after_id: str | None = None
         self.queue_after_id: str | None = None
+        self.used_percent_label: tk.Label | None = None
 
         self._configure_window(geometry)
         self._build_ui()
@@ -243,7 +245,23 @@ class TokenQuotaWidget:
             font=(FONT, 9),
             anchor="w",
         )
-        self.used_label.place(x=14, y=75, width=298, height=20)
+        self.used_label.place(
+            x=14,
+            y=75,
+            width=232 if IS_WINDOWS else 298,
+            height=20,
+        )
+
+        if IS_WINDOWS:
+            self.used_percent_label = tk.Label(
+                self.surface,
+                text="",
+                bg=BG,
+                fg=GREEN,
+                font=(FONT, 9, "bold"),
+                anchor="e",
+            )
+            self.used_percent_label.place(x=252, y=75, width=60, height=20)
 
         self.progress = tk.Canvas(
             self.surface,
@@ -463,6 +481,8 @@ class TokenQuotaWidget:
                 self.used_label.configure(text=self._error_text(error))
             else:
                 self.used_label.configure(text=self._t("connecting"))
+            if self.used_percent_label is not None:
+                self.used_percent_label.configure(text="")
             self.progress.coords(self.progress_fill, 0, 0, 0, 5)
         else:
             window = format_window(rate.window, self.settings.language)
@@ -477,13 +497,19 @@ class TokenQuotaWidget:
                     limit=format_amount(rate.limit, rate.unit),
                 )
             )
-            width = round(298 * rate.used_fraction)
-            if rate.used_fraction >= 0.90:
+            used_fraction = rate.used_fraction
+            width = round(298 * used_fraction)
+            if used_fraction >= 0.90:
                 color = RED
-            elif rate.used_fraction >= 0.70:
+            elif used_fraction >= 0.70:
                 color = AMBER
             else:
                 color = GREEN
+            if self.used_percent_label is not None:
+                self.used_percent_label.configure(
+                    text=f"{used_fraction:.0%}",
+                    fg=color,
+                )
             self.progress.coords(self.progress_fill, 0, 0, width, 5)
             self.progress.itemconfigure(self.progress_fill, fill=color)
 
